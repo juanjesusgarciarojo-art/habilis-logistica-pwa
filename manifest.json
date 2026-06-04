@@ -3,13 +3,13 @@
   "name": "Habilis Gestión Logística",
   "icons": [
     {
-      "src": "/logo.png",
+      "src": "./logo.png",
       "type": "image/png",
       "sizes": "512x512",
       "purpose": "any maskable"
     }
   ],
-  "start_url": "/",
+  "start_url": "./",
   "background_color": "#0b0f17",
   "theme_color": "#00609f",
   "display": "standalone",
