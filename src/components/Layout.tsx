@@ -39,7 +39,7 @@ export const Layout: React.FC<LayoutProps> = ({
       {/* Sidebar - Desktop Navigation */}
       <aside className={`sidebar ${mobileMenuOpen ? 'mobile-open' : ''}`}>
         <div className="logo-container">
-          <img src="/logo.png" className="habilis-logo" alt="Habilis Logística" />
+          <img src="./logo.png" className="habilis-logo" alt="Habilis Logística" />
         </div>
 
         <nav style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>

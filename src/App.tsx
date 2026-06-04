@@ -72,7 +72,7 @@ function App() {
     return (
       <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-app)', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
         <div className="card-habilis" style={{ maxWidth: '420px', width: '100%', padding: '2.5rem', textAlign: 'center', boxShadow: 'var(--shadow-lg)' }}>
-          <img src="/logo.png" className="habilis-logo" alt="Habilis Logística" style={{ height: '54px', marginBottom: '1.5rem' }} />
+          <img src="./logo.png" className="habilis-logo" alt="Habilis Logística" style={{ height: '54px', marginBottom: '1.5rem' }} />
           
           <h2 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '0.25rem', color: 'var(--habilis-blue)' }}>Gestión Logística</h2>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '1.75rem' }}>Acceso seguro para personal Habilis</p>
