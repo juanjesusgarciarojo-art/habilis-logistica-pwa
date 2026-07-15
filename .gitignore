@@ -1,24 +1,29 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+# Root Gitignore for Habilis Repository
+# This repository contains multiple modules:
+# - APP: The mobile/web React Vite PWA app
+# - operativa: Operational documentation
+# - papelera: Archived/old files
 
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
+# Ignore IDE files
+.vscode/
+.idea/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore deliverables/zips in root
+*.zip
+*.rar
+
+# Ignore papelera
+papelera/
+
+# Ignore app specific untracked folders
+APP/node_modules/
+APP/dist/
