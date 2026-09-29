@@ -21,8 +21,8 @@ Thumbs.db
 *.zip
 *.rar
 
-# Ignore papelera
-papelera/
+# Ignore respaldo
+respaldo/
 
 # Ignore app specific untracked folders
 APP/node_modules/
