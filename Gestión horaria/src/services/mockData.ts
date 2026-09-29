@@ -1,8 +1,7 @@
 import { Trabajador, PlanTurnoTrabajador } from '../types';
 
-// Hash SHA-256 precalculado de "1234:SALT_DEFAULT:HABILIS_SECURE_CLOCK"
-// para que todos los usuarios de prueba tengan el PIN por defecto "1234"
-const PIN_TEST_HASH = '799d123b3eb36a992576b5c332c32cf97b15a6b0c2049d5a62f559ea990ef3ce';
+// Hash SHA-256 exacto de "1234:SALT_DEFAULT_1234:HABILIS_SECURE_CLOCK"
+const PIN_TEST_HASH = '53fcbbd84735418102647416c05cf988922c0add5d5117df565def252622d62a';
 const PIN_TEST_SALT = 'SALT_DEFAULT_1234';
 
 export const TRABAJADORES_INICIALES: Trabajador[] = [

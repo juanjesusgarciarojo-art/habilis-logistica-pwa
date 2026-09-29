@@ -26,7 +26,20 @@ export async function getTrabajadores(): Promise<Trabajador[]> {
   const saved = localStorage.getItem(LOCAL_STORAGE_WORKERS);
   if (saved) {
     try {
-      return JSON.parse(saved);
+      const list: Trabajador[] = JSON.parse(saved);
+      let changed = false;
+      list.forEach(t => {
+        const init = TRABAJADORES_INICIALES.find(i => i.numeroTrabajador === t.numeroTrabajador);
+        if (init && t.pinHash !== init.pinHash) {
+          t.pinHash = init.pinHash;
+          t.pinSalt = init.pinSalt;
+          changed = true;
+        }
+      });
+      if (changed) {
+        localStorage.setItem(LOCAL_STORAGE_WORKERS, JSON.stringify(list));
+      }
+      return list;
     } catch (e) {
       console.error(e);
     }

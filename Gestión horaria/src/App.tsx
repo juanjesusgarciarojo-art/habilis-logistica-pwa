@@ -12,8 +12,8 @@ export const App: React.FC = () => {
       {/* Barra de Navegación Superior */}
       <header className="top-navbar">
         <div className="brand-section">
-          <div className="brand-badge">HABILIS</div>
-          <div>
+          <img src="/logo.png" alt="Habilis" style={{ height: '34px', objectFit: 'contain' }} />
+          <div style={{ borderLeft: '1.5px solid #cbd5e1', paddingLeft: '14px', marginLeft: '6px' }}>
             <div className="brand-title">Gestión Horaria y Control de Jornada</div>
             <div style={{ fontSize: '11px', color: '#64748b' }}>Punto de Control en Planta · Saica Pack</div>
           </div>

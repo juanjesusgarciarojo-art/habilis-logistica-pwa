@@ -192,6 +192,11 @@ export const KioskView: React.FC = () => {
           </div>
         )}
 
+        {/* Logo corporativo en cabecera del kiosco */}
+        <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'center' }}>
+          <img src="/logo.png" alt="Habilis" style={{ height: '32px', objectFit: 'contain' }} />
+        </div>
+
         {/* ============================================================== */}
         {/* PASO 1: INTRODUCCIÓN DEL CÓDIGO DE 5 CIFRAS                    */}
         {/* ============================================================== */}
@@ -227,12 +232,44 @@ export const KioskView: React.FC = () => {
               <button
                 className="keypad-btn keypad-btn-action keypad-btn-enter"
                 onClick={() => {
-                  if (codigoInput.length === 5) verificarCodigo(codigoInput);
-                  else setErrorMsg('Introduce las 5 cifras completas.');
+                  if (codigoInput.length === 5) {
+                    verificarCodigo(codigoInput);
+                  } else if (codigoInput.length === 4) {
+                    setErrorMsg('⚠️ El código de empleado tiene 5 cifras (ej: 12001). El PIN es de 4 cifras (1234) y se pide en el paso siguiente.');
+                  } else {
+                    setErrorMsg('Introduce las 5 cifras completas del código de trabajador.');
+                  }
                 }}
               >
                 <ArrowRight size={24} />
               </button>
+            </div>
+
+            {/* Accesos rápidos para probar fácilmente */}
+            <div style={{ marginTop: '20px', width: '100%', borderTop: '1px dashed #cbd5e1', paddingTop: '14px' }}>
+              <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 700, marginBottom: '8px', textAlign: 'center' }}>
+                👤 PRUEBA RÁPIDA (TOCA PARA AUTOCOMPLETAR):
+              </div>
+              <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                <button
+                  onClick={() => { setCodigoInput('12001'); verificarCodigo('12001'); }}
+                  style={{ background: '#e0f2fe', color: '#0284c7', border: '1px solid #bae6fd', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
+                >
+                  12001 · Carlos Gómez (C1)
+                </button>
+                <button
+                  onClick={() => { setCodigoInput('12002'); verificarCodigo('12002'); }}
+                  style={{ background: '#e0f2fe', color: '#0284c7', border: '1px solid #bae6fd', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
+                >
+                  12002 · David Ruiz (C1)
+                </button>
+                <button
+                  onClick={() => { setCodigoInput('13001'); verificarCodigo('13001'); }}
+                  style={{ background: '#e0f2fe', color: '#0284c7', border: '1px solid #bae6fd', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
+                >
+                  13001 · Laura Morales (C1)
+                </button>
+              </div>
             </div>
           </>
         )}
@@ -277,6 +314,9 @@ export const KioskView: React.FC = () => {
               <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>
                 Introduce tu PIN personal de 4 cifras
               </div>
+              <div style={{ fontSize: '12px', color: '#0284c7', fontWeight: 700, marginTop: '2px' }}>
+                💡 PIN de prueba: <b>1234</b>
+              </div>
               <div style={{ fontSize: '11px', color: '#f59e0b', fontWeight: 600, marginTop: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
                 <ShieldAlert size={14} /> Máximo 3 intentos antes de bloqueo
               </div>
@@ -307,6 +347,16 @@ export const KioskView: React.FC = () => {
                 onClick={resetearKiosco}
               >
                 Cancelar
+              </button>
+            </div>
+
+            {/* Botón rápido para meter 1234 */}
+            <div style={{ marginTop: '14px', textAlign: 'center' }}>
+              <button
+                onClick={() => { setPinInput('1234'); verificarPin('1234'); }}
+                style={{ background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '6px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
+              >
+                🔑 Rellenar PIN 1234 automáticamente
               </button>
             </div>
           </>
