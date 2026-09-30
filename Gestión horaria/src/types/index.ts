@@ -60,3 +60,9 @@ export interface EstadoTrabajadorMonitor {
   estadoPresencia: 'PRESENTE' | 'PENDIENTE' | 'EXTRA' | 'AUSENTE_JUSTIFICADO';
   minutosRetraso?: number;
 }
+
+export const CENTROS_HABILIS = {
+  1: { id: 1 as const, nombre: 'Saica Pack · Velilla', localidad: 'Velilla de San Antonio (Centro 1)' },
+  2: { id: 2 as const, nombre: 'Saica Pack · Meco', localidad: 'Meco (Centro 2)' }
+};
+

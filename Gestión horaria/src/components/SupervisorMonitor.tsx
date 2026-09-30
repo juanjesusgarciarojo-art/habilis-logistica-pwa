@@ -104,7 +104,7 @@ export const SupervisorMonitor: React.FC = () => {
                 cursor: 'pointer'
               }}
             >
-              Centro 1 (Saica)
+              Saica Pack · Velilla (C1)
             </button>
             <button
               onClick={() => setFiltroCentro(2)}
@@ -119,7 +119,7 @@ export const SupervisorMonitor: React.FC = () => {
                 cursor: 'pointer'
               }}
             >
-              Centro 2
+              Saica Pack · Meco (C2)
             </button>
           </div>
 

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Trabajador, Fichaje } from '../types';
+import { Trabajador, Fichaje, CENTROS_HABILIS } from '../types';
 import { getTrabajadores, saveTrabajador, registrarFichaje, getUltimoFichajeHoy } from '../services/fichajeStorage';
 import { validarPinTrabajador } from '../services/authPin';
-import { CheckCircle2, AlertTriangle, Delete, ArrowRight, UserCheck, ShieldAlert, LogIn, LogOut, Lock, X } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, Delete, ArrowRight, UserCheck, ShieldAlert, LogIn, LogOut, Lock, X, Building2 } from 'lucide-react';
 
 interface KioskViewProps {
   onAccesoResponsable?: (responsable: Trabajador) => void;
@@ -51,6 +51,48 @@ export const KioskView: React.FC<KioskViewProps> = ({ onAccesoResponsable }) => 
     if (onAccesoResponsable) {
       onAccesoResponsable(encontrado);
     }
+  };
+
+  // Centro asignado a este terminal (independiente en cada tablet vía localStorage)
+  const [centroTerminal, setCentroTerminal] = useState<1 | 2>(() => {
+    const saved = localStorage.getItem('habilis_kiosk_centro');
+    return saved === '2' ? 2 : 1;
+  });
+
+  // Modal para cambio rápido de centro (autorizado con código de Responsable sin PIN)
+  const [modalCentroOpen, setModalCentroOpen] = useState<boolean>(false);
+  const [respCentroCodigo, setRespCentroCodigo] = useState<string>('');
+  const [centroRespAutorizado, setCentroRespAutorizado] = useState<Trabajador | null>(null);
+  const [centroError, setCentroError] = useState<string | null>(null);
+  const [msgCentroExito, setMsgCentroExito] = useState<string | null>(null);
+
+  const handleVerificarRespParaCentro = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setCentroError(null);
+    const trabajadores = await getTrabajadores();
+    const encontrado = trabajadores.find(t => t.numeroTrabajador === respCentroCodigo);
+    if (!encontrado) {
+      setCentroError('⚠️ Código de trabajador no reconocido.');
+      return;
+    }
+    if (encontrado.puesto !== 'Responsable') {
+      setCentroError(`🚫 Acción no permitida: ${encontrado.nombreCompleto} (${encontrado.puesto}) no tiene categoría de Responsable de Turno.`);
+      return;
+    }
+    // Responsable validado (sin pedir PIN como solicitó el usuario)
+    setCentroRespAutorizado(encontrado);
+  };
+
+  const handleSeleccionarCentro = (nuevoCentro: 1 | 2) => {
+    setCentroTerminal(nuevoCentro);
+    localStorage.setItem('habilis_kiosk_centro', String(nuevoCentro));
+    setMsgCentroExito(`✅ Terminal reasignado a ${CENTROS_HABILIS[nuevoCentro].nombre}`);
+    setTimeout(() => {
+      setModalCentroOpen(false);
+      setCentroRespAutorizado(null);
+      setRespCentroCodigo('');
+      setMsgCentroExito(null);
+    }, 1200);
   };
 
   // Reloj de la cabecera
@@ -186,7 +228,8 @@ export const KioskView: React.FC<KioskViewProps> = ({ onAccesoResponsable }) => 
       return;
     }
 
-    const fichaje = await registrarFichaje(trabajadorActual, tipo);
+    const dispositivo = centroTerminal === 1 ? 'TABLET-VELILLA' : 'TABLET-MECO';
+    const fichaje = await registrarFichaje(trabajadorActual, tipo, dispositivo);
     setExitoFichaje(fichaje);
     setSegundosRetorno(3);
   };
@@ -200,7 +243,31 @@ export const KioskView: React.FC<KioskViewProps> = ({ onAccesoResponsable }) => 
       {/* Barra superior de estado de la tablet */}
       <div className="kiosk-status-bar">
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span>📍 Saica Pack · Centro 1</span>
+          <button
+            onClick={() => {
+              setCentroError(null);
+              setCentroRespAutorizado(null);
+              setRespCentroCodigo('');
+              setModalCentroOpen(true);
+            }}
+            title="Toca para cambiar la planta asignada a esta tablet (requiere código de responsable)"
+            style={{
+              background: 'rgba(255, 255, 255, 0.1)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              borderRadius: '8px',
+              padding: '4px 8px',
+              color: '#f8fafc',
+              fontSize: '12px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <span>📍 {CENTROS_HABILIS[centroTerminal].nombre}</span>
+            <span style={{ fontSize: '10px', color: '#38bdf8', textDecoration: 'underline' }}>cambiar</span>
+          </button>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{ fontFamily: 'monospace', fontSize: '14px', color: '#38bdf8' }}>
@@ -650,6 +717,214 @@ export const KioskView: React.FC<KioskViewProps> = ({ onAccesoResponsable }) => 
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Selección / Cambio de Centro de Trabajo */}
+      {modalCentroOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(15, 23, 42, 0.75)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 9999,
+          padding: '20px'
+        }}>
+          <div style={{
+            background: '#ffffff',
+            borderRadius: '20px',
+            maxWidth: '430px',
+            width: '100%',
+            padding: '24px',
+            boxShadow: '0 20px 25px -5px rgba(0,0,0,0.3)',
+            border: '1px solid #cbd5e1'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#00609f', fontWeight: 800, fontSize: '17px' }}>
+                <Building2 size={20} color="#00609f" />
+                Ubicación de esta Tablet
+              </div>
+              <button
+                onClick={() => setModalCentroOpen(false)}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#64748b' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '14px', lineHeight: '1.4' }}>
+              Configura en qué planta física opera esta tablet de forma <b>independiente</b> (no afecta a los terminales de las demás naves).
+            </p>
+
+            <div style={{
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              borderRadius: '10px',
+              padding: '10px 14px',
+              fontSize: '12px',
+              color: '#334155',
+              marginBottom: '16px'
+            }}>
+              Planta actual: <b>{CENTROS_HABILIS[centroTerminal].nombre}</b> ({CENTROS_HABILIS[centroTerminal].localidad})
+            </div>
+
+            {centroError && (
+              <div style={{
+                background: '#fee2e2',
+                border: '1px solid #ef4444',
+                color: '#991b1b',
+                borderRadius: '10px',
+                padding: '10px 12px',
+                fontSize: '12px',
+                fontWeight: 600,
+                marginBottom: '14px'
+              }}>
+                {centroError}
+              </div>
+            )}
+
+            {msgCentroExito && (
+              <div style={{
+                background: '#ecfdf5',
+                border: '1px solid #10b981',
+                color: '#065f46',
+                borderRadius: '10px',
+                padding: '12px',
+                fontSize: '13px',
+                fontWeight: 700,
+                textAlign: 'center',
+                marginBottom: '14px'
+              }}>
+                {msgCentroExito}
+              </div>
+            )}
+
+            {!centroRespAutorizado ? (
+              <form onSubmit={handleVerificarRespParaCentro} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                    Código de Responsable (5 cifras, sin PIN):
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={5}
+                    value={respCentroCodigo}
+                    onChange={(e) => setRespCentroCodigo(e.target.value)}
+                    placeholder="Ej: 11001"
+                    autoFocus
+                    style={{
+                      width: '100%',
+                      padding: '10px 14px',
+                      borderRadius: '10px',
+                      border: '1.5px solid #cbd5e1',
+                      fontSize: '16px',
+                      fontFamily: 'monospace',
+                      fontWeight: 700,
+                      letterSpacing: '2px'
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRespCentroCodigo('11001');
+                    }}
+                    style={{
+                      background: '#e0f2fe',
+                      border: '1px solid #bae6fd',
+                      borderRadius: '8px',
+                      padding: '8px 12px',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      color: '#0284c7',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    ⚡ Demo: 11001 (Antonio)
+                  </button>
+                  <button
+                    type="submit"
+                    style={{
+                      flex: 1,
+                      background: '#00609f',
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: '10px',
+                      padding: '10px',
+                      fontSize: '13px',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Autorizar Selección →
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ fontSize: '12px', color: '#059669', fontWeight: 700, marginBottom: '4px' }}>
+                  ✅ Responsable verificado: {centroRespAutorizado.nombreCompleto}
+                </div>
+                <div style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>
+                  Selecciona la planta donde operará este terminal:
+                </div>
+
+                <button
+                  onClick={() => handleSeleccionarCentro(1)}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    padding: '14px',
+                    borderRadius: '12px',
+                    border: '2px solid',
+                    borderColor: centroTerminal === 1 ? '#00609f' : '#cbd5e1',
+                    background: centroTerminal === 1 ? '#e0f2fe' : '#ffffff',
+                    cursor: 'pointer',
+                    textAlign: 'left'
+                  }}
+                >
+                  <div style={{ fontSize: '14px', fontWeight: 800, color: '#0f172a' }}>
+                    🏭 Saica Pack · Velilla (Centro 1)
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#64748b' }}>
+                    Velilla de San Antonio, Madrid
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => handleSeleccionarCentro(2)}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    padding: '14px',
+                    borderRadius: '12px',
+                    border: '2px solid',
+                    borderColor: centroTerminal === 2 ? '#00609f' : '#cbd5e1',
+                    background: centroTerminal === 2 ? '#e0f2fe' : '#ffffff',
+                    cursor: 'pointer',
+                    textAlign: 'left'
+                  }}
+                >
+                  <div style={{ fontSize: '14px', fontWeight: 800, color: '#0f172a' }}>
+                    🏭 Saica Pack · Meco (Centro 2)
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#64748b' }}>
+                    Meco, Madrid
+                  </div>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
