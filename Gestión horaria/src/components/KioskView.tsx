@@ -2,9 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Trabajador, Fichaje } from '../types';
 import { getTrabajadores, saveTrabajador, registrarFichaje, getUltimoFichajeHoy } from '../services/fichajeStorage';
 import { validarPinTrabajador } from '../services/authPin';
-import { CheckCircle2, AlertTriangle, Delete, ArrowRight, UserCheck, ShieldAlert, LogIn, LogOut } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, Delete, ArrowRight, UserCheck, ShieldAlert, LogIn, LogOut, Lock, X } from 'lucide-react';
 
-export const KioskView: React.FC = () => {
+interface KioskViewProps {
+  onAccesoResponsable?: (responsable: Trabajador) => void;
+}
+
+export const KioskView: React.FC<KioskViewProps> = ({ onAccesoResponsable }) => {
   // Pasos: 1 = Código de 5 cifras, 2 = Confirmación & PIN, 3 = Marcaje Entrada/Salida
   const [paso, setPaso] = useState<1 | 2 | 3>(1);
   const [codigoInput, setCodigoInput] = useState<string>('');
@@ -15,6 +19,39 @@ export const KioskView: React.FC = () => {
   const [exitoFichaje, setExitoFichaje] = useState<Fichaje | null>(null);
   const [segundosRetorno, setSegundosRetorno] = useState<number>(3);
   const [relojHora, setRelojHora] = useState<string>('');
+
+  // Modal para acceso protegido de Responsable
+  const [modalRespOpen, setModalRespOpen] = useState<boolean>(false);
+  const [respCodigo, setRespCodigo] = useState<string>('');
+  const [respPin, setRespPin] = useState<string>('');
+  const [respError, setRespError] = useState<string | null>(null);
+
+  const handleLoginResponsable = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setRespError(null);
+    const trabajadores = await getTrabajadores();
+    const encontrado = trabajadores.find(t => t.numeroTrabajador === respCodigo);
+    if (!encontrado) {
+      setRespError('⚠️ Código de usuario no reconocido.');
+      return;
+    }
+    if (encontrado.puesto !== 'Responsable') {
+      setRespError(`🚫 Acceso denegado: ${encontrado.nombreCompleto} tiene categoría de ${encontrado.puesto}. Solo personal con categoría de Responsable puede entrar a la zona de control.`);
+      return;
+    }
+    const { resultado } = await validarPinTrabajador(respPin, encontrado);
+    if (!resultado.valido) {
+      setRespError(`⚠️ ${resultado.mensaje}`);
+      return;
+    }
+    // Éxito: cerrar modal y notificar al padre
+    setModalRespOpen(false);
+    setRespCodigo('');
+    setRespPin('');
+    if (onAccesoResponsable) {
+      onAccesoResponsable(encontrado);
+    }
+  };
 
   // Reloj de la cabecera
   useEffect(() => {
@@ -165,8 +202,30 @@ export const KioskView: React.FC = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span>📍 Saica Pack · Centro 1</span>
         </div>
-        <div style={{ fontFamily: 'monospace', fontSize: '14px', color: '#38bdf8' }}>
-          {relojHora}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ fontFamily: 'monospace', fontSize: '14px', color: '#38bdf8' }}>
+            {relojHora}
+          </div>
+          <button
+            onClick={() => { setRespError(null); setModalRespOpen(true); }}
+            title="Acceso Gestión Responsable de Turno"
+            style={{
+              background: 'rgba(255, 255, 255, 0.12)',
+              border: '1px solid rgba(255, 255, 255, 0.25)',
+              color: '#e2e8f0',
+              borderRadius: '8px',
+              padding: '4px 10px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '11px',
+              fontWeight: 700,
+              cursor: 'pointer'
+            }}
+          >
+            <Lock size={12} color="#38bdf8" />
+            <span>Zona Control</span>
+          </button>
         </div>
       </div>
 
@@ -449,6 +508,151 @@ export const KioskView: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Modal de Acceso Responsable de Turno */}
+      {modalRespOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(15, 23, 42, 0.75)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 9999,
+          padding: '20px'
+        }}>
+          <div style={{
+            background: '#ffffff',
+            borderRadius: '20px',
+            maxWidth: '420px',
+            width: '100%',
+            padding: '24px',
+            boxShadow: '0 20px 25px -5px rgba(0,0,0,0.3)',
+            border: '1px solid #cbd5e1'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#00609f', fontWeight: 800, fontSize: '17px' }}>
+                <Lock size={20} color="#00609f" />
+                Acceso a Zona de Control
+              </div>
+              <button
+                onClick={() => setModalRespOpen(false)}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#64748b' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '16px', lineHeight: '1.4' }}>
+              Solo el personal con categoría de <b>Responsable de Turno</b> puede acceder al monitor de presencia en planta y administración.
+            </p>
+
+            {respError && (
+              <div style={{
+                background: '#fee2e2',
+                border: '1px solid #ef4444',
+                color: '#991b1b',
+                borderRadius: '10px',
+                padding: '10px 12px',
+                fontSize: '12px',
+                fontWeight: 600,
+                marginBottom: '14px'
+              }}>
+                {respError}
+              </div>
+            )}
+
+            <form onSubmit={handleLoginResponsable} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                  Código de Responsable (5 cifras):
+                </label>
+                <input
+                  type="text"
+                  maxLength={5}
+                  value={respCodigo}
+                  onChange={(e) => setRespCodigo(e.target.value)}
+                  placeholder="Ej: 11001"
+                  autoFocus
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: '10px',
+                    border: '1.5px solid #cbd5e1',
+                    fontSize: '16px',
+                    fontFamily: 'monospace',
+                    fontWeight: 700,
+                    letterSpacing: '2px'
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                  PIN Personal (4 cifras):
+                </label>
+                <input
+                  type="password"
+                  maxLength={4}
+                  value={respPin}
+                  onChange={(e) => setRespPin(e.target.value)}
+                  placeholder="••••"
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: '10px',
+                    border: '1.5px solid #cbd5e1',
+                    fontSize: '18px',
+                    letterSpacing: '4px'
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRespCodigo('11001');
+                    setRespPin('1234');
+                  }}
+                  style={{
+                    background: '#e0f2fe',
+                    border: '1px solid #bae6fd',
+                    borderRadius: '8px',
+                    padding: '8px 12px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    color: '#0284c7',
+                    cursor: 'pointer'
+                  }}
+                >
+                  ⚡ Autocompletar: 11001 (Antonio)
+                </button>
+                <button
+                  type="submit"
+                  style={{
+                    flex: 1,
+                    background: '#00609f',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '10px',
+                    padding: '10px',
+                    fontSize: '14px',
+                    fontWeight: 700,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Entrar a Control →
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
