@@ -10,17 +10,27 @@ export const SupervisorMonitor: React.FC = () => {
   const [fichajesHoy, setFichajesHoy] = useState<Fichaje[]>([]);
   const [cuadrante] = useState<PlanTurnoTrabajador[]>(CUADRANTE_INICIAL);
   const [filtroCentro, setFiltroCentro] = useState<1 | 2>(1);
+  const [cargando, setCargando] = useState<boolean>(false);
+  const [ultimaHoraRefresco, setUltimaHoraRefresco] = useState<string>('');
 
-  const cargarDatos = async () => {
+  const cargarDatos = async (manual: boolean = false) => {
+    if (manual) setCargando(true);
     const t = await getTrabajadores();
     const f = await getFichajesHoy();
     setTrabajadores(t);
     setFichajesHoy(f);
+    const ahora = new Date();
+    setUltimaHoraRefresco(ahora.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+    if (manual) {
+      setTimeout(() => {
+        setCargando(false);
+      }, 500);
+    }
   };
 
   useEffect(() => {
     cargarDatos();
-    const interval = setInterval(cargarDatos, 5000); // Refresco cada 5s
+    const interval = setInterval(() => cargarDatos(false), 5000); // Refresco en segundo plano cada 5s
     return () => clearInterval(interval);
   }, []);
 
@@ -186,20 +196,40 @@ export const SupervisorMonitor: React.FC = () => {
             </button>
           </div>
 
-          <button
-            onClick={cargarDatos}
-            style={{
-              padding: '8px',
-              borderRadius: '10px',
-              border: '1px solid #cbd5e1',
-              background: '#ffffff',
-              color: '#64748b',
-              cursor: 'pointer'
-            }}
-            title="Refrescar datos"
-          >
-            <RefreshCw size={18} />
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {ultimaHoraRefresco && (
+              <span style={{ fontSize: '11px', color: '#64748b' }}>
+                Actualizado: <b>{ultimaHoraRefresco}</b>
+              </span>
+            )}
+            <button
+              onClick={() => cargarDatos(true)}
+              disabled={cargando}
+              style={{
+                padding: '8px 14px',
+                borderRadius: '10px',
+                border: '1px solid #cbd5e1',
+                background: '#ffffff',
+                color: '#00609f',
+                cursor: cargando ? 'wait' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '12px',
+                fontWeight: 700,
+                boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+              }}
+              title="Refrescar datos en tiempo real"
+            >
+              <RefreshCw
+                size={15}
+                style={{
+                  animation: cargando ? 'spin 0.6s linear infinite' : 'none'
+                }}
+              />
+              <span>{cargando ? 'Actualizando...' : 'Refrescar'}</span>
+            </button>
+          </div>
         </div>
       </div>
 
